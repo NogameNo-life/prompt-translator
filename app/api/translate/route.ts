@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
             : `translate Russian to English: ${prompt}`
 
     const hfResponse = await fetch(
-        'https://api-inference.huggingface.co/models/utrobinmv/t5_translate_en_ru_zh_base_200',
+        'https://api-inference.huggingface.co/models/Helsinki-NLP/opus-mt-ru-en',
         {
             method: 'POST',
             headers: {

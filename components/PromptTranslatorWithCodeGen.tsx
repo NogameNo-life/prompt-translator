@@ -16,9 +16,7 @@ export default function PromptTranslatorWithCodeGen() {
         try {
             const res = await fetch('/api/translate', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ prompt: russianPrompt }),
             })
 
@@ -41,9 +39,7 @@ export default function PromptTranslatorWithCodeGen() {
         try {
             const res = await fetch('/api/generate-code', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ prompt: translatedPrompt }),
             })
 
@@ -54,6 +50,12 @@ export default function PromptTranslatorWithCodeGen() {
         } finally {
             setLoadingCode(false)
         }
+    }
+
+    const handleClearAll = () => {
+        setRussianPrompt('')
+        setTranslatedPrompt('')
+        setGeneratedCode('')
     }
 
     return (
@@ -67,12 +69,15 @@ export default function PromptTranslatorWithCodeGen() {
                 className="mb-4"
             />
 
-            <div className="flex gap-4 mb-4">
+            <div className="flex flex-wrap gap-4 mb-4">
                 <Button onClick={handleTranslate} disabled={loadingTranslate}>
                     {loadingTranslate ? 'Переводим...' : 'Перевести'}
                 </Button>
                 <Button onClick={handleGenerateCode} disabled={loadingCode || !translatedPrompt}>
                     {loadingCode ? 'Генерируем...' : 'Сгенерировать код'}
+                </Button>
+                <Button variant="outline" onClick={handleClearAll}>
+                    Очистить всё
                 </Button>
             </div>
 
