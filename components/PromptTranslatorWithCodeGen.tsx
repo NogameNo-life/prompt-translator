@@ -3,11 +3,20 @@
 import { useState } from 'react'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
+import { Trash2 } from 'lucide-react'
+
+type HistoryItem = {
+    russian: string
+    translated: string
+    code: string
+}
 
 export default function PromptTranslatorWithCodeGen() {
     const [russianPrompt, setRussianPrompt] = useState('')
     const [translatedPrompt, setTranslatedPrompt] = useState('')
     const [generatedCode, setGeneratedCode] = useState('')
+    const [history, setHistory] = useState<HistoryItem[]>([])
+
     const [loadingTranslate, setLoadingTranslate] = useState(false)
     const [loadingCode, setLoadingCode] = useState(false)
 
@@ -17,11 +26,12 @@ export default function PromptTranslatorWithCodeGen() {
             const res = await fetch('/api/translate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ prompt: russianPrompt }),
+                body: JSON.stringify({ prompt: russianPrompt, direction: 'ru-en' }),
             })
-
             const data = await res.json()
-            setTranslatedPrompt(data.translated || '[ошибка перевода]')
+            const rawTranslated = data.translated || '[ошибка перевода]'
+            const cleanedPrompt = rawTranslated.replace(/^translate (russian|english) to (english|russian):\s*/i, '')
+            setTranslatedPrompt(cleanedPrompt)
         } catch (e) {
             setTranslatedPrompt('[ошибка запроса]')
         } finally {
@@ -42,9 +52,14 @@ export default function PromptTranslatorWithCodeGen() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ prompt: translatedPrompt }),
             })
-
             const data = await res.json()
-            setGeneratedCode(data.code || '[ошибка генерации]')
+            const code = data.code || '[ошибка генерации]'
+            setGeneratedCode(code)
+
+            setHistory(prev => [
+                { russian: russianPrompt, translated: translatedPrompt, code },
+                ...prev,
+            ])
         } catch (e) {
             setGeneratedCode('[ошибка запроса]')
         } finally {
@@ -58,8 +73,12 @@ export default function PromptTranslatorWithCodeGen() {
         setGeneratedCode('')
     }
 
+    const deleteFromHistory = (index: number) => {
+        setHistory(prev => prev.filter((_, i) => i !== index))
+    }
+
     return (
-        <div className="max-w-3xl mx-auto py-10 px-4">
+        <div className="max-w-4xl mx-auto py-10 px-4">
             <h1 className="text-2xl font-bold mb-4">Генерация Java-кода из русского запроса</h1>
 
             <Textarea
@@ -69,7 +88,7 @@ export default function PromptTranslatorWithCodeGen() {
                 className="mb-4"
             />
 
-            <div className="flex flex-wrap gap-4 mb-4">
+            <div className="flex gap-4 mb-4">
                 <Button onClick={handleTranslate} disabled={loadingTranslate}>
                     {loadingTranslate ? 'Переводим...' : 'Перевести'}
                 </Button>
@@ -94,6 +113,35 @@ export default function PromptTranslatorWithCodeGen() {
                 placeholder="Сгенерированный код"
                 className="h-60 font-mono"
             />
+
+            {history.length > 0 && (
+                <div className="mt-8">
+                    <h2 className="text-xl font-semibold mb-4">История запросов</h2>
+                    <div className="space-y-4">
+                        {history.map((item, index) => (
+                            <div
+                                key={index}
+                                className="border p-4 rounded-xl bg-muted relative"
+                            >
+                                <button
+                                    className="absolute top-2 right-2 text-red-500"
+                                    onClick={() => deleteFromHistory(index)}
+                                >
+                                    <Trash2 size={16} />
+                                </button>
+                                <p className="text-sm font-medium">📝 Русский:</p>
+                                <pre className="whitespace-pre-wrap">{item.russian}</pre>
+                                <p className="text-sm font-medium mt-2">🔁 Перевод:</p>
+                                <pre className="whitespace-pre-wrap">{item.translated}</pre>
+                                <p className="text-sm font-medium mt-2">💻 Код:</p>
+                                <pre className="bg-gray-100 p-2 rounded font-mono text-sm overflow-auto">
+                                    {item.code}
+                                </pre>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

@@ -6,7 +6,7 @@ export async function POST(req: NextRequest) {
     const input =
         direction === 'en-ru'
             ? `translate English to Russian: ${prompt}`
-            : `translate Russian to English: ${prompt}`
+            : `${prompt}`
 
     const hfResponse = await fetch(
         'https://api-inference.huggingface.co/models/Helsinki-NLP/opus-mt-ru-en',
