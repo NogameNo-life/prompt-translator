@@ -8,33 +8,25 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Invalid prompt' }, { status: 400 })
         }
 
-        const response = await fetch(
-            'https://api-inference.huggingface.co/models/bigcode/starcoder',
-            {
-                method: 'POST',
-                headers: {
-                    Authorization: `Bearer ${process.env.HF_API_KEY}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    inputs: prompt,
-                    parameters: {
-                        max_new_tokens: 96,
-                        temperature: 0.2,
-                        return_full_text: false
-                    }
-                }),
-            }
-        )
+        // URL локального сервера генерации (можно задать в .env.local как LOCAL_CODEGEN_API)
+        const endpoint = process.env.LOCAL_CODEGEN_API || 'http://localhost:5000/generate'
+
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ prompt }),
+        })
 
         if (!response.ok) {
             const errorText = await response.text()
-            console.error('Ошибка Hugging Face:', errorText)
-            return NextResponse.json({ error: 'Hugging Face API error' }, { status: 500 })
+            console.error('Ошибка локального генератора:', errorText)
+            return NextResponse.json({ error: 'Local model error' }, { status: 500 })
         }
 
         const data = await response.json()
-        const code = data?.[0]?.generated_text || '[ошибка генерации]'
+        const code = data?.generated_text || '[ошибка генерации]'
 
         return NextResponse.json({ code })
     } catch (error) {
