@@ -1,0 +1,9 @@
+node_modules
+.next
+.git
+.idea
+*.log
+*.tsbuildinfo
+.env.local
+__MACOSX
+.DS_Store

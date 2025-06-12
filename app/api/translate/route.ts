@@ -5,28 +5,31 @@ export async function POST(req: NextRequest) {
 
     const input =
         direction === 'en-ru'
-            ? `translate English to Russian: ${prompt}`
-            : `${prompt}`
+            ? `translate English to Russian: ${prompt}` // Пока только ru-en поддерживается
+            : prompt
 
-    const hfResponse = await fetch(
-        'https://api-inference.huggingface.co/models/Helsinki-NLP/opus-mt-ru-en',
-        {
+    try {
+        const response = await fetch('http://localhost:8000/translate', {
             method: 'POST',
             headers: {
-                Authorization: `Bearer ${process.env.HF_API_KEY}`,
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ inputs: input }),
+            body: JSON.stringify({ text: input }),
+        })
+
+        if (!response.ok) {
+            const errorText = await response.text()
+            return NextResponse.json({ error: errorText }, { status: 500 })
         }
-    )
 
-    if (!hfResponse.ok) {
-        const errorText = await hfResponse.text()
-        return NextResponse.json({ error: errorText }, { status: 500 })
+        const data = await response.json()
+        const translated = data.translation || ''
+
+        return NextResponse.json({ translated })
+    } catch (error) {
+        return NextResponse.json(
+            { error: 'Failed to connect to local translator service' },
+            { status: 500 }
+        )
     }
-
-    const data = await hfResponse.json()
-    const translated = data?.[0]?.translation_text || ''
-
-    return NextResponse.json({ translated })
 }

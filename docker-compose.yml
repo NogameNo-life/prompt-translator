@@ -1,0 +1,18 @@
+version: '3.8'
+services:
+  web:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - HF_API_KEY=${HF_API_KEY}
+      - LOCAL_CODEGEN_API=http://starcoder:5000/generate
+    depends_on:
+      - starcoder
+
+  starcoder:
+    image: your/starcoder-local:latest
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./models:/models
